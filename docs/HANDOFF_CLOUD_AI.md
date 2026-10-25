@@ -6,14 +6,14 @@
 
 ## Repositório e ponto de partida
 
-- Repositório privado: https://github.com/PedroMarioaBros/PMCN-Cl-vis-IA
+- Repositório público (visibilidade verificada em 2026-10-25): https://github.com/PedroMarioaBros/PMCN-Cl-vis-IA
 - Branch de desenvolvimento: `feature/app-teste-local-v0.1.0`
 - Commit da versão diagnóstica: `a085f1d03b5dea74f9b9716bd6bd5e7ad5e694a8`
 - Workflow: https://github.com/PedroMarioaBros/PMCN-Cl-vis-IA/actions/runs/40186710854
 - Build do commit acima: **sucesso** no GitHub Actions; artefato `PMCN-Clovis-IA-teste-0.1.0` gerado. Isso confirma compilação, não funcionamento da inferência no telefone.
 - APK anterior (antes do diagnóstico): o usuário instalou no Moto G52 e testou. Não é a versão diagnóstica atual.
 
-> O repositório é privado. O agente que for analisar precisa receber acesso concedido pelo proprietário por meio dos mecanismos oficiais da plataforma que estiver usando. Não compartilhar senha, token pessoal nem segredo de autenticação no prompt.
+> O repositório está público, mas o código do aplicativo e este documento estão na branch `feature/app-teste-local-v0.1.0`. A branch padrão `main` contém apenas a documentação inicial e não contém o app Android. Para inspecionar o código, abra explicitamente a branch de desenvolvimento ou use os links diretos para os arquivos. Não compartilhar senha, token pessoal nem segredo de autenticação no prompt.
 
 ## Estado observado no aparelho real
 
