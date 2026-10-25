@@ -23,6 +23,9 @@ import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.MessageCallback
+import com.google.ai.edge.litertlm.NoRepeatNgramConfig
+import com.google.ai.edge.litertlm.RepetitionPenaltyConfig
+import com.google.ai.edge.litertlm.SamplerConfig
 import com.google.ai.edge.litertlm.ThinkingConfig
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -47,7 +50,7 @@ import java.util.Locale
 private data class ChatLine(val role: String, val text: String)
 
 private const val TAG = "Clovis"
-private const val MAX_OUTPUT_TOKENS = 512
+private const val MAX_OUTPUT_TOKENS = 256
 private const val GENERATION_TIMEOUT_MS = 180_000L
 
 // Diagnósticos antigos podem estar anexados a respostas parciais no histórico.
@@ -306,11 +309,20 @@ class MainActivity : Activity() {
                     Log.i(TAG, "Mensagens anteriores enviadas ao contexto=${prior.size}; histórico=${history.size}")
                     val chat = candidate.createConversation(ConversationConfig(
                         systemInstruction = Contents.of(
-                            "Você é Clóvis, assistente pessoal de Pedro. Responda em português brasileiro por padrão. " +
-                            "Seja útil, claro e honesto; não invente fatos nem diga que fez algo que não fez. " +
-                            "Você está executando localmente no telefone e não tem acesso à internet durante a conversa."
+                            "Você é Clóvis, assistente pessoal de Pedro. Sua língua padrão é português brasileiro natural, " +
+                            "com gramática, acentuação e pontuação corretas. " +
+                            "Responda diretamente ao que foi perguntado, com clareza e sem enrolação. " +
+                            "Não repita a pergunta, não repita a mesma ideia ou frase, não faça introduções genéricas, " +
+                            "não recomece a resposta várias vezes e não repita sua identidade. " +
+                            "Prefira respostas curtas quando a pergunta for simples; detalhe apenas quando necessário. " +
+                            "Se não souber ou não entender, diga isso claramente em vez de inventar. " +
+                            "Não alegue ter pesquisado na internet, executado ações ou verificado fatos quando não o fez. " +
+                            "Você funciona localmente e não tem acesso à internet nesta conversa."
                         ),
-                        initialMessages = prior
+                        initialMessages = prior,
+                        samplerConfig = SamplerConfig(topK = 40, topP = 0.90, temperature = 0.65),
+                        maxOutputToken = MAX_OUTPUT_TOKENS,
+                        thinkingConfig = ThinkingConfig(enableThinking = false)
                     ))
                     Pair(candidate, chat)
                 }
@@ -454,6 +466,13 @@ class MainActivity : Activity() {
                             }
                         }
                     },
+                    repetitionPenaltyConfig = RepetitionPenaltyConfig(
+                        repetitionPenalty = 1.12f,
+                        presencePenalty = 0.10f,
+                        frequencyPenalty = 0.12f,
+                        windowSize = 128
+                    ),
+                    noRepeatNgramConfig = NoRepeatNgramConfig(noRepeatNgramSize = 4, windowSize = 128),
                     maxOutputToken = MAX_OUTPUT_TOKENS,
                     thinkingConfig = ThinkingConfig(enableThinking = false)
                 )
