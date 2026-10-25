@@ -2,7 +2,7 @@
 
 **PMCN Clóvis IA** é o projeto de uma IA pessoal chamada **Clóvis**, planejada para funcionar prioritariamente no próprio aparelho Android, com foco em privacidade, continuidade de contexto e uso offline.
 
-> **Estado atual (2026-10-25):** o APK debug da branch `feature/app-teste-local-v0.1.0` compilou com sucesso no GitHub Actions. No teste real no Moto G52, o modelo baixou e o app indicou que estava pronto, mas uma mensagem enviada não produziu resposta visível após mais de dois minutos. A geração local ainda não está validada; este é o bloqueio prioritário. A versão diagnóstica mais recente mostra estado de geração e limite de três minutos.
+> **Estado atual (2026-10-25):** o código-fonte e a documentação já estão na branch padrão `main`. O build do APK debug passou no GitHub Actions ([execução de verificação](https://github.com/PedroMarioaBros/PMCN-Cl-vis-IA/actions/runs/40188568771)). No teste real no Moto G52, o modelo baixou e o app indicou que estava pronto, mas uma mensagem enviada não produziu resposta visível após mais de dois minutos. A geração local ainda não está validada; este é o bloqueio prioritário. A versão diagnóstica mostra estado de geração e limite de três minutos.
 
 ## Para Cláudio — comece por aqui
 
