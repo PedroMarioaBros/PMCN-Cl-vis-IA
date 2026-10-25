@@ -438,13 +438,18 @@ class MainActivity : Activity() {
                         override fun onDone() {
                             if (!terminal.compareAndSet(false, true)) return
                             Log.i(TAG, "Geração concluída: blocos=$chunks; duração=${(System.nanoTime() - startedAt) / 1_000_000}ms")
-                            if (continuation.isActive) continuation.resume(Unit)
+                            // Enfileira a conclusão depois dos chunks já enviados à UI.
+                            runOnUiThread {
+                                if (continuation.isActive) continuation.resume(Unit)
+                            }
                         }
 
                         override fun onError(throwable: Throwable) {
                             if (!terminal.compareAndSet(false, true)) return
                             Log.e(TAG, "Callback de geração retornou erro", throwable)
-                            if (continuation.isActive) continuation.resumeWithException(throwable)
+                            runOnUiThread {
+                                if (continuation.isActive) continuation.resumeWithException(throwable)
+                            }
                         }
                     },
                     maxOutputToken = MAX_OUTPUT_TOKENS,
