@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -21,6 +22,8 @@ import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.Message
+import com.google.ai.edge.litertlm.MessageCallback
+import com.google.ai.edge.litertlm.ThinkingConfig
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +32,10 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.suspendCancellableCoroutine
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.TimeoutCancellationException
 import org.json.JSONArray
 import org.json.JSONObject
@@ -38,6 +45,16 @@ import java.net.URL
 import java.util.Locale
 
 private data class ChatLine(val role: String, val text: String)
+
+private const val TAG = "Clovis"
+private const val MAX_OUTPUT_TOKENS = 512
+private const val GENERATION_TIMEOUT_MS = 180_000L
+
+// Diagnósticos antigos podem estar anexados a respostas parciais no histórico.
+private fun isAppNote(text: String): Boolean =
+    text.contains("[A geração ultrapassou 3 minutos") ||
+    text.contains("[A geração terminou sem retornar texto") ||
+    text.contains("[Erro ao gerar resposta:")
 
 class MainActivity : Activity() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -223,6 +240,9 @@ class MainActivity : Activity() {
                                 }
                             }
                         }
+                        if (total > 0 && temp.length() != total) {
+                            throw IllegalStateException("Download incompleto: ${temp.length()} de $total bytes.")
+                        }
                         if (temp.length() < 100_000_000L) throw IllegalStateException("O arquivo baixado é pequeno demais para ser o modelo. Verifique a conexão e tente novamente.")
                         if (!temp.renameTo(modelFile)) {
                             temp.copyTo(modelFile, overwrite = true)
@@ -256,14 +276,34 @@ class MainActivity : Activity() {
                         backend = Backend.CPU(),
                         cacheDir = cacheDir.absolutePath
                     ))
+                    val startedAt = System.nanoTime()
                     candidate.initialize()
-                    val prior = history.mapNotNull { line ->
-                        when (line.role) {
-                            "user" -> Message.user(line.text)
-                            "assistant" -> if (line.text.isNotBlank()) Message.model(line.text) else null
-                            else -> null
+                    Log.i(TAG, "Engine.initialize() concluído em ${(System.nanoTime() - startedAt) / 1_000_000} ms; modelo=${modelFile.length()} bytes")
+
+                    // Recria apenas pares usuário/resposta concluídos; avisos e mensagens órfãs não entram no contexto.
+                    val prior = mutableListOf<Message>()
+                    var i = 0
+                    while (i < history.size - 1) {
+                        val userLine = history[i]
+                        val assistantLine = history[i + 1]
+                        val interruptedByNotice = history.getOrNull(i + 2)?.let {
+                            it.role == "notice" && (it.text.startsWith("A geração") || it.text.startsWith("Erro ao gerar"))
+                        } ?: false
+                        if (
+                            userLine.role == "user" &&
+                            assistantLine.role == "assistant" &&
+                            assistantLine.text.isNotBlank() &&
+                            !isAppNote(assistantLine.text) &&
+                            !interruptedByNotice
+                        ) {
+                            prior.add(Message.user(userLine.text))
+                            prior.add(Message.model(assistantLine.text))
+                            i += 2
+                        } else {
+                            i += 1
                         }
                     }
+                    Log.i(TAG, "Mensagens anteriores enviadas ao contexto=${prior.size}; histórico=${history.size}")
                     val chat = candidate.createConversation(ConversationConfig(
                         systemInstruction = Contents.of(
                             "Você é Clóvis, assistente pessoal de Pedro. Responda em português brasileiro por padrão. " +
@@ -296,6 +336,7 @@ class MainActivity : Activity() {
         val text = input.text.toString().trim()
         val chat = conversation
         if (text.isEmpty() || chat == null || busy) return
+
         input.setText("")
         addLine("user", text)
         val answerIndex = addLine("assistant", "")
@@ -303,55 +344,115 @@ class MainActivity : Activity() {
         busy = true
         sendButton.isEnabled = false
         input.isEnabled = false
-        status.text = "Clóvis está gerando a resposta no telefone…"
+        status.text = "Clóvis está iniciando a geração local…"
+
         scope.launch {
             try {
-                withTimeout(180_000L) {
-                    withContext(Dispatchers.IO) {
-                        chat.sendMessageAsync(text).collect { piece ->
-                            val chunk = piece.toString()
-                            if (chunk.isNotEmpty()) {
-                                withContext(Dispatchers.Main) {
-                                    val line = history.getOrNull(answerIndex)
-                                    if (line != null && line.role == "assistant") {
-                                        history[answerIndex] = line.copy(text = line.text + chunk)
-                                        updateLineView(answerIndex)
-                                        scrollToBottom()
-                                    }
-                                }
-                            }
-                        }
-                    }
+                withTimeout(GENERATION_TIMEOUT_MS) {
+                    generateWithCallback(chat, text, answerIndex)
                 }
+
                 val line = history.getOrNull(answerIndex)
                 if (line != null && line.role == "assistant" && line.text.isBlank()) {
-                    history[answerIndex] = line.copy(text = "[A geração terminou sem retornar texto. Isso indica um problema no runtime ou no modelo.]")
-                    updateLineView(answerIndex)
-                    status.text = "A geração terminou, mas o modelo não retornou texto."
+                    status.text = "A geração terminou sem texto. Consulte o diagnóstico."
+                    addLine("notice", "A geração terminou sem retornar texto. O runtime/modelo precisa de investigação.")
                 } else {
                     status.text = "Clóvis está pronto. Resposta concluída."
                 }
                 persistHistory()
             } catch (e: TimeoutCancellationException) {
-                val line = history.getOrNull(answerIndex)
-                if (line != null && line.role == "assistant") {
-                    history[answerIndex] = line.copy(text = (line.text + "\n\n[A geração ultrapassou 3 minutos e foi interrompida para evitar espera indefinida.]").trim())
-                }
-                updateLineView(answerIndex)
-                status.text = "A resposta demorou mais de 3 minutos. O teste indica um problema de geração, não apenas uma demora normal."
+                Log.w(TAG, "Timeout de ${GENERATION_TIMEOUT_MS / 1000} segundos na geração")
+                addLine("notice", "A geração ultrapassou 3 minutos e foi cancelada para evitar espera indefinida.")
+                status.text = "A geração excedeu 3 minutos. O processo de inferência foi cancelado; consulte o diagnóstico."
                 persistHistory()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                val line = history.getOrNull(answerIndex)
-                if (line != null) history[answerIndex] = line.copy(text = (line.text + "\n\n[Erro ao gerar resposta: ${e.message ?: "falha desconhecida"}]").trim())
-                updateLineView(answerIndex)
+                Log.e(TAG, "Falha na geração", e)
+                addLine("notice", "Erro ao gerar resposta: ${e.message ?: "falha desconhecida"}")
                 status.text = "Ocorreu um erro ao gerar a resposta."
                 persistHistory()
             } finally {
                 busy = false
                 sendButton.isEnabled = conversation != null
                 input.isEnabled = true
+            }
+        }
+    }
+
+    /**
+     * Usa a API de callback do LiteRT-LM, evitando o adaptador Flow interno da biblioteca.
+     * O callback entrega mensagens estruturadas; toString() contém o texto visível e o canal
+     * "thought" é registrado apenas como diagnóstico, nunca mostrado como resposta.
+     */
+    private suspend fun generateWithCallback(chat: Conversation, prompt: String, answerIndex: Int) {
+        suspendCancellableCoroutine<Unit> { continuation ->
+            val terminal = AtomicBoolean(false)
+            val startedAt = System.nanoTime()
+            var chunks = 0
+
+            continuation.invokeOnCancellation {
+                if (terminal.compareAndSet(false, true)) {
+                    Log.w(TAG, "Cancelando geração nativa")
+                    try {
+                        chat.cancelProcess()
+                    } catch (cancelError: Exception) {
+                        Log.w(TAG, "Não foi possível cancelar a inferência nativa", cancelError)
+                    }
+                }
+            }
+
+            try {
+                Log.i(TAG, "sendMessageAsync(callback) início; thinking=false; maxOutputToken=$MAX_OUTPUT_TOKENS")
+                chat.sendMessageAsync(
+                    prompt,
+                    object : MessageCallback {
+                        override fun onMessage(message: Message) {
+                            if (terminal.get()) return
+                            chunks++
+                            val chunk = message.toString()
+                            val thought = message.channels["thought"].orEmpty()
+                            Log.i(
+                                TAG,
+                                "bloco=$chunks tempo=${(System.nanoTime() - startedAt) / 1_000_000}ms " +
+                                    "texto=${chunk.length} pensamento=${thought.length}"
+                            )
+
+                            runOnUiThread {
+                                if (terminal.get()) return@runOnUiThread
+                                if (chunk.isNotEmpty()) {
+                                    val line = history.getOrNull(answerIndex)
+                                    if (line != null && line.role == "assistant") {
+                                        history[answerIndex] = line.copy(text = line.text + chunk)
+                                        updateLineView(answerIndex)
+                                        scrollToBottom()
+                                        persistHistory()
+                                    }
+                                } else if (thought.isNotEmpty()) {
+                                    status.text = "Clóvis está processando a resposta…"
+                                }
+                            }
+                        }
+
+                        override fun onDone() {
+                            if (!terminal.compareAndSet(false, true)) return
+                            Log.i(TAG, "Geração concluída: blocos=$chunks; duração=${(System.nanoTime() - startedAt) / 1_000_000}ms")
+                            if (continuation.isActive) continuation.resume(Unit)
+                        }
+
+                        override fun onError(throwable: Throwable) {
+                            if (!terminal.compareAndSet(false, true)) return
+                            Log.e(TAG, "Callback de geração retornou erro", throwable)
+                            if (continuation.isActive) continuation.resumeWithException(throwable)
+                        }
+                    },
+                    maxOutputToken = MAX_OUTPUT_TOKENS,
+                    thinkingConfig = ThinkingConfig(enableThinking = false)
+                )
+            } catch (e: Throwable) {
+                if (terminal.compareAndSet(false, true) && continuation.isActive) {
+                    continuation.resumeWithException(e)
+                }
             }
         }
     }
@@ -386,11 +487,22 @@ class MainActivity : Activity() {
     }
 
     private fun makeBubble(line: ChatLine): TextView = TextView(this).apply {
-        text = (if (line.role == "user") "Você" else "Clóvis") + "\n" + line.text
+        text = (when (line.role) {
+            "user" -> "Você"
+            "notice" -> "Aviso do aplicativo"
+            else -> "Clóvis"
+        }) + "\n" + line.text
         textSize = 15f
         setTextColor(Color.rgb(35, 47, 42))
         setPadding(dp(13), dp(10), dp(13), dp(10))
-        background = rounded(if (line.role == "user") Color.rgb(220, 239, 231) else Color.WHITE, 15)
+        background = rounded(
+            when (line.role) {
+                "user" -> Color.rgb(220, 239, 231)
+                "notice" -> Color.rgb(255, 243, 205)
+                else -> Color.WHITE
+            },
+            15
+        )
         val params = LinearLayout.LayoutParams(
             if (line.role == "user") (resources.displayMetrics.widthPixels * 0.82).toInt() else -1, -2
         )
@@ -401,7 +513,11 @@ class MainActivity : Activity() {
 
     private fun updateLineView(index: Int) {
         if (index !in lineViews.indices || index !in history.indices) return
-        lineViews[index].text = (if (history[index].role == "user") "Você" else "Clóvis") + "\n" + history[index].text
+        lineViews[index].text = (when (history[index].role) {
+            "user" -> "Você"
+            "notice" -> "Aviso do aplicativo"
+            else -> "Clóvis"
+        }) + "\n" + history[index].text
     }
 
     private fun persistHistory() {
