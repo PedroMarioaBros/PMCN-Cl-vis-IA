@@ -13,7 +13,7 @@ android {
         versionName = "0.1.0"
     }
     buildTypes {
-        debug { applicationIdSuffix = ".debug"; versionNameSuffix = "-teste" }
+        debug { applicationIdSuffix = ".diagnostico"; versionNameSuffix = "-diagnostico" }
         release { isMinifyEnabled = false }
     }
     compileOptions {
