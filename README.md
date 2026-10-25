@@ -2,9 +2,20 @@
 
 **PMCN Clóvis IA** é o projeto de uma IA pessoal chamada **Clóvis**, planejada para funcionar prioritariamente no próprio aparelho Android, com foco em privacidade, continuidade de contexto e uso offline.
 
-> **Estado atual:** fase de planejamento e definição técnica. Este repositório está começando agora; ainda não há aplicativo implementado nem compatibilidade/performance confirmadas no aparelho-alvo.
+> **Estado atual:** primeiro protótipo Android em implementação na branch `feature/app-teste-local-v0.1.0`. O APK debug ainda depende da conclusão do build automatizado e de teste real no Moto G52; compatibilidade e desempenho não estão confirmados.
 
-## Objetivos principais
+## Protótipo 0.1.0
+
+- Aplicativo Android próprio, com tela de conversa do Clóvis.
+- Download do modelo dentro do aplicativo: Qwen3-0.6B em formato LiteRT-LM.
+- Inferência local via LiteRT-LM, começando pelo backend CPU.
+- Uma conversa de teste com histórico salvo localmente.
+- A conexão é usada para baixar o modelo. O texto da conversa não é enviado para uma API remota.
+- Workflow do GitHub Actions para gerar APK debug e publicá-lo como artefato de teste.
+
+Consulte o [roteiro de teste no Moto G52](TESTE_NO_MOTO_G52.md). Este protótipo é deliberadamente pequeno; não é a aplicação completa planejada.
+
+## Objetivos principais do projeto
 
 - Executar um modelo de IA local, sem depender de uma API remota para o funcionamento básico.
 - Ter uma interface Android familiar, inspirada na organização e nos fluxos do WhatsApp, mas com identidade visual própria.
@@ -36,9 +47,16 @@ Moto G52, Android 13, Snapdragon 680, 4 GB de RAM e 128 GB de armazenamento, con
 - [Decisões pendentes](docs/DECISOES_PENDENTES.md)
 - [Estudo inicial de IA local no Android](docs/ESTUDO_VIABILIDADE_MODELO_LOCAL.md)
 
-## Primeira meta
+## Próximos passos
 
-Consolidar requisitos e arquitetura; depois, validar a execução de um modelo local no Moto G52 e iniciar um protótipo Android pequeno, sem implementar prematuramente funções ainda não testadas.
+1. Compilar o APK debug por GitHub Actions.
+2. Instalar no Moto G52 e baixar o modelo pelo próprio Clóvis.
+3. Registrar erros, latência, aquecimento, estabilidade e teste em modo avião.
+4. Corrigir os problemas encontrados antes de ampliar o aplicativo.
+
+## Limitações da versão 0.1.0
+
+Ainda não há múltiplas conversas, busca, exportação, memória compartilhada, chat temporário, recuperação semântica ou integração opcional com Gemini. O histórico/contexto atual é simples e não deve ser considerado solução para conversas longas. O teste real no telefone é obrigatório.
 
 ## Licença
 
