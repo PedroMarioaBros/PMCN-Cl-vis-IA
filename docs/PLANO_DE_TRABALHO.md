@@ -9,6 +9,8 @@
 Aceite: documentação no repositório e pendências explicitadas.
 
 ## Fase 1 — Viabilidade de IA local
+- [x] Pesquisa documental inicial: llama.cpp para Android ARM64 e LiteRT-LM como rota atual recomendada pelo Google.
+- [ ] Testar runtime e modelo no Moto G52; pesquisa documental não comprova desempenho no aparelho.
 - Comparar runtimes e modelos compatíveis com Android/ARM64, licença, português, RAM e armazenamento.
 - Instalar e executar modelo local no Moto G52.
 - Medir inicialização, latência, velocidade, memória, aquecimento, bateria e espaço ocupado.
@@ -72,4 +74,5 @@ Aceite: checklist executado e artefato de release realmente produzido e verifica
 ## Registro de execução
 | Data | Fase | Ação | Resultado verificado | Próximo passo |
 |---|---|---|---|---|
-| 2026-10-25 | 0 | Criada documentação inicial no GitHub | README e documentos de planejamento gravados; app ainda não implementado | Revisar decisões e validar IA local |
+| 2026-10-25 | 0 | Criada documentação inicial no GitHub | README e documentos de planejamento gravados; app ainda não implementado | Rever decisões pendentes |
+| 2026-10-25 | 1 | Pesquisa documental inicial sobre runtimes locais | Documentação oficial indica caminhos via llama.cpp Android e LiteRT-LM; nenhum teste no Moto G52 foi executado | Escolher teste exploratório e medir desempenho real |
