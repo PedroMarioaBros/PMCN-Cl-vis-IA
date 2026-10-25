@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/app-teste-local-v0.1.0
+      - 'fix/**'
   pull_request:
     branches:
       - main
@@ -34,6 +35,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
+      - name: Mostrar versão resolvida do LiteRT-LM
+        run: gradle --no-daemon :app:dependencyInsight --dependency litertlm-android --configuration debugRuntimeClasspath
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
       - name: Upload APK

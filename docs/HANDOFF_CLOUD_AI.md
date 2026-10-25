@@ -25,7 +25,7 @@ Aparelho-alvo: Motorola Moto G52, Android 13, Snapdragon 680, 4 GB de RAM e 128 
 4. Não apareceu resposta após mais de dois minutos.
 5. Portanto, a geração de texto local **não está validada**. Não concluir que é apenas lentidão do aparelho sem investigar.
 
-A versão diagnóstica adiciona estado visível durante geração, limite de espera de três minutos, aviso para geração sem texto e exibição de erros. O limite de coroutine pode não interromper uma chamada nativa que esteja bloqueada; isso ainda precisa ser avaliado.
+A branch `fix/diagnostico-geracao` contém uma tentativa de correção/diagnóstico ainda aguardando compilação: usa a API de callback `MessageCallback` em vez do adaptador Flow interno, fixa LiteRT-LM em `0.18.1`, desativa o thinking na chamada e limita a saída a 512 tokens. Registra tempos/blocos no Logcat com tag `Clovis`, mostra avisos separados das respostas e chama `Conversation.cancelProcess()` quando o timeout cancela a coroutine. Nada disso está validado até o Actions compilar e o APK ser testado no Moto G52.
 
 ## Arquivos importantes
 
@@ -47,7 +47,7 @@ A versão diagnóstica adiciona estado visível durante geração, limite de esp
 - Kotlin plugin 2.4.0, escolhido para compatibilidade de metadados com LiteRT-LM 0.18.1.
 - Modelo candidato: `Qwen3-0.6B.litertlm`, baixado de Hugging Face para armazenamento interno do app.
 - Runtime: LiteRT-LM, backend CPU.
-- A chamada de geração usa `chat.sendMessageAsync(text).collect { piece -> piece.toString() }`.
+- Na branch de diagnóstico, a geração usa `chat.sendMessageAsync(text, MessageCallback, maxOutputToken = 512, thinkingConfig = ThinkingConfig(enableThinking = false))`. Essa troca evita o adaptador Flow pré-compilado e permite registrar explicitamente `onMessage`, `onDone` e `onError`. A dependência LiteRT-LM está fixada em `0.18.1` para builds reproduzíveis.
 - Histórico da única conversa de protótipo fica em SharedPreferences como JSON; não é a arquitetura final de persistência.
 - O fluxo de conversa pretendido é local. O download do modelo exige internet; o texto das mensagens não deve ser enviado para serviço remoto nesta versão.
 
@@ -55,9 +55,9 @@ A versão diagnóstica adiciona estado visível durante geração, limite de esp
 
 Faça uma revisão de código de verdade, rastreando a API e o comportamento do LiteRT-LM 0.18.1. Determine por que a geração não entrega texto no aparelho mesmo após o modelo carregar. Verifique, entre outros pontos:
 
-1. Uso correto da API `sendMessageAsync` e tipo/semântica dos elementos emitidos pelo Flow.
-2. Necessidade de usar outra sobrecarga, coletor, dispatcher, configuração de conversa ou tratamento de `Message`/stream.
-3. Se a resposta é emitida como chunks de texto, objetos estruturados ou resultado final que o código está tratando incorretamente.
+1. Confirmar a compilação da sobrecarga de callback `sendMessageAsync` no LiteRT-LM `0.18.1`.
+2. Confirmar se os callbacks `onMessage`, `onDone` e `onError` chegam no aparelho e se `Message.toString()` contém os chunks de texto visíveis.
+3. Usar a tag Logcat `Clovis` para distinguir ausência de callbacks, blocos somente com canal `thought`, erros nativos e término sem texto.
 4. Logs e exceções do runtime nativo, compatibilidade real do arquivo do modelo com a versão da biblioteca, ABI e requisitos de Android.
 5. Se o bloqueio está em inicialização, primeira inferência, stream ou atualização da UI.
 6. Segurança do ciclo de vida da Activity, cancelamento, fechamento do Engine/Conversation e persistência.
