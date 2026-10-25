@@ -148,7 +148,7 @@ class MainActivity : Activity() {
         input = EditText(this).apply {
             hint = "Converse com o Clóvis…"
             textSize = 16f
-            singleLine = false
+            setSingleLine(false)
             maxLines = 4
             imeOptions = EditorInfo.IME_ACTION_SEND
             setPadding(dp(12), dp(8), dp(12), dp(8))
