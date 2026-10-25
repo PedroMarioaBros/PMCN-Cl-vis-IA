@@ -4,6 +4,20 @@
 
 > **Estado atual (2026-10-25):** o APK debug da branch `feature/app-teste-local-v0.1.0` compilou com sucesso no GitHub Actions. No teste real no Moto G52, o modelo baixou e o app indicou que estava pronto, mas uma mensagem enviada não produziu resposta visível após mais de dois minutos. A geração local ainda não está validada; este é o bloqueio prioritário. A versão diagnóstica mais recente mostra estado de geração e limite de três minutos.
 
+## Para Cláudio — comece por aqui
+
+O repositório contém o código-fonte Android e os documentos de contexto. Faça primeiro a leitura do [handoff técnico completo](docs/HANDOFF_CLOUD_AI.md), que explica o problema de inferência, os arquivos relevantes, as restrições do produto e o que esperamos da revisão.
+
+Arquivos de entrada:
+- [Código principal — MainActivity.kt](app/src/main/java/br/com/pmcn/clovis/MainActivity.kt)
+- [Dependências e configuração Android](app/build.gradle.kts)
+- [Manifest Android](app/src/main/AndroidManifest.xml)
+- [Workflow de compilação do APK](.github/workflows/android-apk.yml)
+- [Roteiro de teste no Moto G52](TESTE_NO_MOTO_G52.md)
+- [Issue #2 — bloqueio de inferência](https://github.com/PedroMarioaBros/PMCN-Cl-vis-IA/issues/2)
+
+**Importante:** a compilação no GitHub Actions foi concluída, mas a geração de respostas ainda não foi confirmada no aparelho real. Não declarar o bloqueio resolvido sem evidência. Cláudio deve propor correções em uma branch própria ou branch de correção, sem sobrescrever o código de referência diretamente.
+
 ## Protótipo 0.1.0
 
 - Aplicativo Android próprio, com tela de conversa do Clóvis.
@@ -39,8 +53,9 @@ Moto G52, Android 13, Snapdragon 680, 4 GB de RAM e 128 GB de armazenamento, con
 6. **Transparência:** não prometer memória perfeita, desempenho ilimitado ou ausência absoluta de limitações.
 7. **Desenvolvimento incremental:** cada etapa deve ter critérios de aceite e registro de alterações.
 
-## Documentos
+## Documentos do projeto
 
+- [Handoff técnico para revisão externa](docs/HANDOFF_CLOUD_AI.md)
 - [Requisitos funcionais](docs/REQUISITOS_FUNCIONAIS.md)
 - [Arquitetura técnica proposta](docs/ARQUITETURA_TECNICA.md)
 - [Plano de trabalho e critérios de aceite](docs/PLANO_DE_TRABALHO.md)
