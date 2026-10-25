@@ -28,6 +28,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.TimeoutCancellationException
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -301,20 +303,42 @@ class MainActivity : Activity() {
         busy = true
         sendButton.isEnabled = false
         input.isEnabled = false
+        status.text = "Clóvis está gerando a resposta no telefone…"
         scope.launch {
             try {
-                withContext(Dispatchers.IO) {
-                    chat.sendMessageAsync(text).collect { piece ->
-                        withContext(Dispatchers.Main) {
-                            val line = history.getOrNull(answerIndex)
-                            if (line != null && line.role == "assistant") {
-                                history[answerIndex] = line.copy(text = line.text + piece)
-                                updateLineView(answerIndex)
-                                scrollToBottom()
+                withTimeout(180_000L) {
+                    withContext(Dispatchers.IO) {
+                        chat.sendMessageAsync(text).collect { piece ->
+                            val chunk = piece.toString()
+                            if (chunk.isNotEmpty()) {
+                                withContext(Dispatchers.Main) {
+                                    val line = history.getOrNull(answerIndex)
+                                    if (line != null && line.role == "assistant") {
+                                        history[answerIndex] = line.copy(text = line.text + chunk)
+                                        updateLineView(answerIndex)
+                                        scrollToBottom()
+                                    }
+                                }
                             }
                         }
                     }
                 }
+                val line = history.getOrNull(answerIndex)
+                if (line != null && line.role == "assistant" && line.text.isBlank()) {
+                    history[answerIndex] = line.copy(text = "[A geração terminou sem retornar texto. Isso indica um problema no runtime ou no modelo.]")
+                    updateLineView(answerIndex)
+                    status.text = "A geração terminou, mas o modelo não retornou texto."
+                } else {
+                    status.text = "Clóvis está pronto. Resposta concluída."
+                }
+                persistHistory()
+            } catch (e: TimeoutCancellationException) {
+                val line = history.getOrNull(answerIndex)
+                if (line != null && line.role == "assistant") {
+                    history[answerIndex] = line.copy(text = (line.text + "\n\n[A geração ultrapassou 3 minutos e foi interrompida para evitar espera indefinida.]").trim())
+                }
+                updateLineView(answerIndex)
+                status.text = "A resposta demorou mais de 3 minutos. O teste indica um problema de geração, não apenas uma demora normal."
                 persistHistory()
             } catch (e: CancellationException) {
                 throw e
@@ -322,6 +346,7 @@ class MainActivity : Activity() {
                 val line = history.getOrNull(answerIndex)
                 if (line != null) history[answerIndex] = line.copy(text = (line.text + "\n\n[Erro ao gerar resposta: ${e.message ?: "falha desconhecida"}]").trim())
                 updateLineView(answerIndex)
+                status.text = "Ocorreu um erro ao gerar a resposta."
                 persistHistory()
             } finally {
                 busy = false
