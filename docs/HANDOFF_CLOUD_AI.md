@@ -9,11 +9,11 @@
 - Repositório público (visibilidade verificada em 2026-10-25): https://github.com/PedroMarioaBros/PMCN-Cl-vis-IA
 - Branch de desenvolvimento original: `feature/app-teste-local-v0.1.0`
 - Commit da versão diagnóstica: `a085f1d03b5dea74f9b9716bd6bd5e7ad5e694a8`
-- Workflow: https://github.com/PedroMarioaBros/PMCN-Cl-vis-IA/actions/runs/40186710854
-- Build do commit acima: **sucesso** no GitHub Actions; artefato `PMCN-Clovis-IA-teste-0.1.0` gerado. Isso confirma compilação, não funcionamento da inferência no telefone.
+- Build diagnóstico inicial: https://github.com/PedroMarioaBros/PMCN-Cl-vis-IA/actions/runs/40186710854
+- Build mais recente de verificação da organização do repositório: https://github.com/PedroMarioaBros/PMCN-Cl-vis-IA/actions/runs/40188568771 — **sucesso**, artefato gerado. Isso confirma compilação, não funcionamento da inferência no telefone.
 - APK anterior (antes do diagnóstico): o usuário instalou no Moto G52 e testou. Não é a versão diagnóstica atual.
 
-O código-fonte e os documentos foram preparados para ficarem disponíveis também na branch padrão `main`, evitando que um revisor que abra apenas a página inicial veja somente documentação inicial. Caso a integração ainda não apareça na branch padrão, abra a branch `feature/app-teste-local-v0.1.0` ou use os links diretos abaixo. O repositório é público; não compartilhar senha, token pessoal nem segredo de autenticação no prompt.
+**A branch padrão `main` já contém o código-fonte Android, o workflow de build, o roteiro de teste e toda a documentação de contexto.** O revisor pode abrir a página inicial do repositório e navegar pelos arquivos sem trocar de branch. A branch `feature/app-teste-local-v0.1.0` permanece como histórico da implementação original. Links diretos: [MainActivity.kt](https://github.com/PedroMarioaBros/PMCN-Cl-vis-IA/blob/main/app/src/main/java/br/com/pmcn/clovis/MainActivity.kt), [Gradle do app](https://github.com/PedroMarioaBros/PMCN-Cl-vis-IA/blob/main/app/build.gradle.kts), [workflow](https://github.com/PedroMarioaBros/PMCN-Cl-vis-IA/blob/main/.github/workflows/android-apk.yml) e [roteiro de teste](https://github.com/PedroMarioaBros/PMCN-Cl-vis-IA/blob/main/TESTE_NO_MOTO_G52.md). O repositório é público; não compartilhar senha, token pessoal nem segredo de autenticação no prompt.
 
 ## Estado observado no aparelho real
 
