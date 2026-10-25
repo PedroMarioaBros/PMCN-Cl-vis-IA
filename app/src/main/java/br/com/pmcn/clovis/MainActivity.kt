@@ -419,7 +419,8 @@ class MainActivity : Activity() {
                             )
 
                             runOnUiThread {
-                                if (terminal.get()) return@runOnUiThread
+                                // Callbacks já enfileirados antes de onDone/cancelamento ainda precisam
+                                // ser exibidos; a checagem terminal é feita antes de enfileirar.
                                 if (chunk.isNotEmpty()) {
                                     val line = history.getOrNull(answerIndex)
                                     if (line != null && line.role == "assistant") {
