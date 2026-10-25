@@ -120,7 +120,7 @@ class MainActivity : Activity() {
         welcomePanel.addView(status)
         progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
             max = 100
-            progress = 0
+            this.progress = 0
             visibility = View.GONE
         }
         welcomePanel.addView(progress, LinearLayout.LayoutParams(-1, dp(6)).apply { topMargin = dp(8) })
