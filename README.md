@@ -34,6 +34,7 @@ Moto G52, Android 13, Snapdragon 680, 4 GB de RAM e 128 GB de armazenamento, con
 - [Arquitetura técnica proposta](docs/ARQUITETURA_TECNICA.md)
 - [Plano de trabalho e critérios de aceite](docs/PLANO_DE_TRABALHO.md)
 - [Decisões pendentes](docs/DECISOES_PENDENTES.md)
+- [Estudo inicial de IA local no Android](docs/ESTUDO_VIABILIDADE_MODELO_LOCAL.md)
 
 ## Primeira meta
 
