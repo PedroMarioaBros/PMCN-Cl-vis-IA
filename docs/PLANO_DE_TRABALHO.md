@@ -76,3 +76,6 @@ Aceite: checklist executado e artefato de release realmente produzido e verifica
 |---|---|---|---|---|
 | 2026-10-25 | 0 | Criada documentação inicial no GitHub | README e documentos de planejamento gravados; app ainda não implementado | Rever decisões pendentes |
 | 2026-10-25 | 1 | Pesquisa documental inicial sobre runtimes locais | Documentação oficial indica caminhos via llama.cpp Android e LiteRT-LM; nenhum teste no Moto G52 foi executado | Escolher teste exploratório e medir desempenho real |
+
+| 2026-10-25 | Protótipo 0.1.0 | Build debug do commit `a085f1d03b5dea74f9b9716bd6bd5e7ad5e694a8` | GitHub Actions concluiu com sucesso e publicou artefato; usuário instalou a versão inicial, o modelo baixou e o app indicou pronto, mas a geração não apresentou resposta após mais de dois minutos no Moto G52 | Diagnosticar e corrigir a inferência local antes de ampliar o escopo |
+| 2026-10-25 | Diagnóstico | Commit `a085f1d03b5dea74f9b9716bd6bd5e7ad5e694a8` | Adicionado status visível, timeout de três minutos, aviso para resposta vazia e exibição de erro; build passou. Ainda não há confirmação de inferência funcional no telefone com esta versão diagnóstica | Gerar/instalar APK diagnóstico e registrar resultado do teste |
