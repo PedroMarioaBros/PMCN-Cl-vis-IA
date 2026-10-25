@@ -394,10 +394,12 @@ class MainActivity : Activity() {
             continuation.invokeOnCancellation {
                 if (terminal.compareAndSet(false, true)) {
                     Log.w(TAG, "Cancelando geração nativa")
-                    try {
-                        chat.cancelProcess()
-                    } catch (cancelError: Exception) {
-                        Log.w(TAG, "Não foi possível cancelar a inferência nativa", cancelError)
+                    scope.launch(Dispatchers.IO) {
+                        try {
+                            chat.cancelProcess()
+                        } catch (cancelError: Exception) {
+                            Log.w(TAG, "Não foi possível cancelar a inferência nativa", cancelError)
+                        }
                     }
                 }
             }
